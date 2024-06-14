@@ -7,15 +7,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 
 # Initialize BART tokenizer and model
-#tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
-#model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
-
-#from transformers import DistilBertTokenizer, DistilBertForConditionalGeneration
-
-# Initialize DistilBART tokenizer and model
-tokenizer = BartTokenizer.from_pretrained('sshleifer/distilbart-cnn-12-6')
-model = BartForConditionalGeneration.from_pretrained('sshleifer/distilbart-cnn-12-6')
-
+tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
+model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
 
 # Streamlit app
 st.title("YouTube Video Transcript Summarizer")
