@@ -23,9 +23,11 @@ def fetch_transcript(unique_id):
 @st.cache_resource
 def summarize_text(text):
     max_input_length = 1024  # Adjust as necessary
+    logging.info(f"Summarizing text with length: {len(text)}")
     input_tensor = tokenizer.encode(text[:max_input_length], return_tensors="pt", max_length=512, truncation=True)
     outputs_tensor = model.generate(input_tensor, max_length=160, min_length=120, length_penalty=2.0, num_beams=4, early_stopping=True)
     summary = tokenizer.decode(outputs_tensor[0], skip_special_tokens=True)
+    logging.info(f"Summary generated successfully")
     return summary
 
 if video_link:
