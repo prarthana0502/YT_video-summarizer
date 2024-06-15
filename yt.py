@@ -3,18 +3,19 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from transformers import BartTokenizer, BartForConditionalGeneration
 import logging
 import re
+import traceback
 
-
+# Set up logging
 logging.basicConfig(level=logging.INFO)
 
-
+# Initialize BART tokenizer and model
 tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
 model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
 
-
+# Streamlit app
 st.title("YouTube Video Transcript Summarizer")
 
-
+# Input: YouTube video link
 video_link = st.text_input("Enter YouTube video link:")
 
 @st.cache_data
@@ -23,7 +24,7 @@ def fetch_transcript(video_id):
 
 @st.cache_resource
 def summarize_text(text):
-    max_input_length = 1024  
+    max_input_length = 1024  # Adjust as necessary
     logging.info(f"Summarizing text with length: {len(text)}")
     input_tensor = tokenizer.encode(text[:max_input_length], return_tensors="pt", max_length=512, truncation=True)
     outputs_tensor = model.generate(input_tensor, max_length=160, min_length=120, length_penalty=2.0, num_beams=4, early_stopping=True)
@@ -37,20 +38,20 @@ def extract_video_id(link):
 
 if video_link:
     try:
-      
+        # Extract unique video ID from the link
         video_id = extract_video_id(video_link)
         if not video_id:
             st.error("Invalid YouTube video link")
         else:
-            
+            # Fetch video transcript
             transcript = fetch_transcript(video_id)
             transcript_text = " ".join([entry['text'] for entry in transcript])
             
-            
+            # Display the original transcript
             st.subheader("Original Transcript")
             st.write(transcript_text)
             
-            
+            # Provide download button for the original transcript
             st.download_button(
                 label="Download Original Transcript",
                 data=transcript_text,
@@ -58,14 +59,14 @@ if video_link:
                 mime='text/plain'
             )
             
-            
+            # Summarize the transcript
             summary = summarize_text(transcript_text)
             
-
+            # Display the summary
             st.subheader("Summarized Transcript")
             st.write(summary)
             
-          
+            # Provide download button for the summary
             st.download_button(
                 label="Download Summary",
                 data=summary,
@@ -74,4 +75,5 @@ if video_link:
             )
     except Exception as e:
         logging.error(f"An error occurred: {e}", exc_info=True)
-        st.error(f"An error occurred: {e}")
+        st.error(f"An error occurred: {e}\n\n{traceback.format_exc()}")
+
