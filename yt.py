@@ -9,8 +9,14 @@ import traceback
 logging.basicConfig(level=logging.INFO)
 
 # Initialize BART tokenizer and model
-tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
-model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
+@st.cache_resource
+def load_model():
+    logging.info("Loading BART tokenizer and model")
+    tokenizer = BartTokenizer.from_pretrained('facebook/bart-large-cnn')
+    model = BartForConditionalGeneration.from_pretrained('facebook/bart-large-cnn')
+    return tokenizer, model
+
+tokenizer, model = load_model()
 
 # Streamlit app
 st.title("YouTube Video Transcript Summarizer")
@@ -22,7 +28,7 @@ video_link = st.text_input("Enter YouTube video link:")
 def fetch_transcript(video_id):
     return YouTubeTranscriptApi.get_transcript(video_id)
 
-@st.cache_resource
+@st.cache_data
 def summarize_text(text):
     max_input_length = 1024  # Adjust as necessary
     logging.info(f"Summarizing text with length: {len(text)}")
@@ -36,6 +42,16 @@ def extract_video_id(link):
     match = re.search(r"(?:v=|\/)([0-9A-Za-z_-]{11}).*", link)
     return match.group(1) if match else None
 
+def display_text_and_download_button(header, text, filename):
+    st.subheader(header)
+    st.write(text)
+    st.download_button(
+        label=f"Download {header}",
+        data=text,
+        file_name=filename,
+        mime='text/plain'
+    )
+
 if video_link:
     try:
         # Extract unique video ID from the link
@@ -47,33 +63,14 @@ if video_link:
             transcript = fetch_transcript(video_id)
             transcript_text = " ".join([entry['text'] for entry in transcript])
             
-            # Display the original transcript
-            st.subheader("Original Transcript")
-            st.write(transcript_text)
-            
-            # Provide download button for the original transcript
-            st.download_button(
-                label="Download Original Transcript",
-                data=transcript_text,
-                file_name='original_transcript.txt',
-                mime='text/plain'
-            )
+            # Display and download original transcript
+            display_text_and_download_button("Original Transcript", transcript_text, 'original_transcript.txt')
             
             # Summarize the transcript
             summary = summarize_text(transcript_text)
             
-            # Display the summary
-            st.subheader("Summarized Transcript")
-            st.write(summary)
-            
-            # Provide download button for the summary
-            st.download_button(
-                label="Download Summary",
-                data=summary,
-                file_name='summary.txt',
-                mime='text/plain'
-            )
+            # Display and download summary
+            display_text_and_download_button("Summarized Transcript", summary, 'summary.txt')
     except Exception as e:
         logging.error(f"An error occurred: {e}", exc_info=True)
         st.error(f"An error occurred: {e}\n\n{traceback.format_exc()}")
-
